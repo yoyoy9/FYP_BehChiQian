@@ -7,8 +7,6 @@ import plotly.graph_objects as go
 import joblib
 from datetime import datetime, timedelta
 from scipy.special import inv_boxcox
-from st_aggrid import AgGrid, GridOptionsBuilder, DataReturnMode, GridUpdateMode
-
 
 # Load the XGBoost Model
 @st.cache_resource
@@ -150,7 +148,6 @@ def show_performance_metrics(metrics):
 st.title("📈 Fashion Sales Forecasting Dashboard - XGBoost")
 st.sidebar.header("🔧 Model & Forecast Settings")
 days_to_forecast = st.sidebar.number_input("Days to Forecast", min_value=1, max_value=365, value=30)
-plot_theme = st.sidebar.selectbox("Select Plot Theme", ["plotly_white", "plotly_dark", "ggplot2", "seaborn"])
 actual_color = st.sidebar.color_picker("Select Actual Sales Color", "#00FF00")
 predicted_color = st.sidebar.color_picker("Select Predicted Sales Color", "#0000FF")
 
@@ -162,14 +159,14 @@ if st.sidebar.button("Run Forecast"):
     if y_test_display is not None and y_pred_test_display is not None:
         actual_vs_predicted = generate_forecast_chart(
             test_indices, y_test_display, y_pred_test_display, 
-            'XGBoost Actual vs Predicted', theme=plot_theme, actual_color=actual_color, predicted_color=predicted_color
+            'XGBoost Actual vs Predicted', actual_color=actual_color, predicted_color=predicted_color
         )
         st.plotly_chart(actual_vs_predicted)
 
         future_forecast_fig = generate_forecast_chart(
             future_dates, [None] * len(future_dates), y_pred_future_display,
             f"{days_to_forecast} Days Future Sales Forecast", lower_bound=lower_bound, upper_bound=upper_bound,
-            theme=plot_theme, actual_color=actual_color, predicted_color=predicted_color
+            actual_color=actual_color, predicted_color=predicted_color
         )
         st.plotly_chart(future_forecast_fig)
 
@@ -181,13 +178,7 @@ if st.sidebar.button("Run Forecast"):
             'Upper Bound': upper_bound
         })
         st.subheader('Forecasted Sales Table')
-
-        gb = GridOptionsBuilder.from_dataframe(forecast_df)
-        gb.configure_pagination(paginationAutoPageSize=True)  # Enable pagination
-        gb.configure_default_column( sortable=False, filter=True, resizable=True)  # Enable sorting, filtering, and resizing
-        gridOptions = gb.build()
-
-        AgGrid(forecast_df, gridOptions=gridOptions, enable_enterprise_modules=False)
+        st.dataframe(forecast_df)
 
         # Download option for forecast data
         csv = forecast_df.to_csv(index=False)
