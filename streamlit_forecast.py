@@ -146,6 +146,12 @@ def show_performance_metrics(metrics):
     
 # Streamlit Interface
 st.title("📈 Fashion Sales Forecasting Dashboard - XGBoost")
+st.markdown("""
+This application provides sales forecasts for a men's product from Oxwhite, 
+specifically for the **Men's Premium Weight Cotton Crew Neck Tee**. The data used 
+for this model includes product details, sales history, and other related factors 
+to predict future sales. """)
+
 st.sidebar.header("🔧 Model & Forecast Settings")
 days_to_forecast = st.sidebar.number_input("Days to Forecast", min_value=1, max_value=365, value=30)
 actual_color = st.sidebar.color_picker("Select Actual Sales Color", "#00FF00")
