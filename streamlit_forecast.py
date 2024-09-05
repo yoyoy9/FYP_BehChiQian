@@ -8,6 +8,23 @@ import joblib
 from datetime import datetime, timedelta
 from scipy.special import inv_boxcox
 
+# Set page configuration
+st.set_page_config(
+    page_title="Sales Forecasting Dashboard",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Hide Streamlit header and footer
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # Load the XGBoost Model
 @st.cache_resource
 def load_xgboost_model():
