@@ -5,5 +5,4 @@ xgboost
 scikit-learn
 plotly
 joblib
-st-aggrid
 scipy
