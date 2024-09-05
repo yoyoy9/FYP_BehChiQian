@@ -15,6 +15,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Hide only the footer for a cleaner experience
+hide_footer_style = """
+            <style>
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_footer_style, unsafe_allow_html=True)
+
 
 # Load the XGBoost Model
 @st.cache_resource
