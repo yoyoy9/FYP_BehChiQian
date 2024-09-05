@@ -13,7 +13,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, DataReturnMode, GridUpdateMode
 # Load the XGBoost Model
 @st.cache_resource
 def load_xgboost_model():
-    xgboost_model_path = r'C:\Users\ACER\Downloads\models\xgboost_model.pkl'
+    xgboost_model_path = 'xgboost_model.pkl'
     xgboost_model = joblib.load(xgboost_model_path)
     return xgboost_model
 
@@ -22,10 +22,10 @@ xgboost_model = load_xgboost_model()
 # Load Data
 @st.cache_data
 def load_xgboost_data():
-    X_train = pd.read_csv(r'C:\Users\ACER\Downloads\models\X_train_xgboost.csv', index_col=0)
-    y_train = pd.read_csv(r'C:\Users\ACER\Downloads\models\y_train_xgboost.csv', index_col=0)
-    X_test = pd.read_csv(r'C:\Users\ACER\Downloads\models\X_test_xgboost.csv', index_col=0)
-    y_test = pd.read_csv(r'C:\Users\ACER\Downloads\models\y_test_xgboost.csv', index_col=0)
+    X_train = pd.read_csv('X_train_xgboost.csv', index_col=0)
+    y_train = pd.read_csv('y_train_xgboost.csv', index_col=0)
+    X_test = pd.read_csv('X_test_xgboost.csv', index_col=0)
+    y_test = pd.read_csv('y_test_xgboost.csv', index_col=0)
     
     # Ensure the index is properly converted to datetime
     X_train.index = pd.to_datetime(X_train.index)
