@@ -84,6 +84,7 @@ def generate_forecast_chart(dates, actual_sales, predicted_sales, title, lower_b
         template=theme,
         hovermode='x unified',
         autosize=True
+        height=350,  # Reduce height for better mobile display
     )
 
     fig.update_xaxes(rangeslider_visible=True)
