@@ -83,7 +83,7 @@ def generate_forecast_chart(dates, actual_sales, predicted_sales, title, lower_b
         yaxis_title='Total Sales',
         template=theme,
         hovermode='x unified',
-        autosize=True
+        autosize=True,
         height=350,  # Reduce height for better mobile display
     )
 
