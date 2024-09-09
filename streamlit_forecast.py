@@ -65,8 +65,9 @@ def generate_forecast_chart(dates, actual_sales, predicted_sales, title, lower_b
     # Make sure dates are properly formatted as datetime objects for Plotly
     dates = pd.to_datetime(dates)
 
-    # Plot actual sales
-    fig.add_trace(go.Scatter(x=dates, y=actual_sales, mode='lines+markers', name='Actual Sales', line=dict(color=actual_color), connectgaps=True))
+    # Plot actual sales if available
+    if actual_sales is not None:
+        fig.add_trace(go.Scatter(x=dates[:len(actual_sales)], y=actual_sales, mode='lines+markers', name='Actual Sales', line=dict(color=actual_color)))
 
     # Plot predicted sales
     fig.add_trace(go.Scatter(x=dates, y=predicted_sales, mode='lines+markers', name='Predicted Sales', line=dict(color=predicted_color), connectgaps=True))
@@ -82,8 +83,7 @@ def generate_forecast_chart(dates, actual_sales, predicted_sales, title, lower_b
         yaxis_title='Total Sales',
         template=theme,
         hovermode='x unified',
-        autosize=True,
-        height=350,  # Reduce height for better mobile display
+        autosize=True
     )
 
     fig.update_xaxes(rangeslider_visible=True)
@@ -108,43 +108,50 @@ def calculate_errors(actual_sales, predicted_sales):
     return {'MAE (%)': mae_pct, 'RMSE (%)': rmse_pct, 'MAPE (%)': mape}
 
 
-def train_and_predict(X_train, y_train, X_test, y_test, days_to_forecast, boxcox_lambda):
-
-    # Define future dates using the last date from y_test
-    if isinstance(y_test.index[-1], datetime):
-        last_date = y_test.index[-1]
-    else:
-        last_date = pd.to_datetime(y_test.index[-1])
-   
-    last_date = y_test.index[-1]
-    future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=days_to_forecast, freq='D')
-    
-    # Fit the model and make predictions
+def train_and_predict(X_train, y_train, X_test, y_test, forecast_input, boxcox_lambda):
+    # Fit the model
     xgb_model = XGBRegressor().fit(X_train, y_train)
     y_pred_test_transformed = xgb_model.predict(X_test)
 
     # Ensure predictions are generated
     if y_pred_test_transformed is None or len(y_pred_test_transformed) == 0:
         st.error("XGBoost prediction failed.")
-        return None, None, None, None, None
-    
+        return None, None, None, None, None, None, None, None
+
     y_test_display = inverse_boxcox(y_test.values.flatten(), boxcox_lambda)
     y_pred_test_display = inverse_boxcox(y_pred_test_transformed, boxcox_lambda)
+
+    # Determine future dates based on input type
+    if isinstance(forecast_input, int):
+        # If forecast_input is an integer (days to forecast)
+        last_date = y_test.index[-1]
+        future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=forecast_input, freq='D')
+    else:
+        # If forecast_input is already a DatetimeIndex (date range)
+        future_dates = forecast_input
 
     # Generate future data for forecasting
     future_X = pd.DataFrame(index=future_dates)
     for col in X_test.columns:
-        future_X[col] = np.linspace(X_test[col].iloc[-1], X_test[col].iloc[-1] * 1.1, num=days_to_forecast)  # Simplified extrapolation
-        
+        if X_test[col].dtype == 'float64' or X_test[col].dtype == 'int64':
+            # Simple linear extrapolation
+            slope = (X_test[col].iloc[-1] - X_test[col].iloc[0]) / (len(X_test) - 1)
+            intercept = X_test[col].iloc[-1] - slope * len(X_test)
+            future_X[col] = slope * (np.arange(len(X_test), len(X_test) + len(future_dates)) + 1) + intercept
+        else:
+            # Use the last known value for non-numeric data
+            future_X[col] = X_test[col].iloc[-1]
+
     y_pred_future_transformed = xgb_model.predict(future_X)
     y_pred_future_display = inverse_boxcox(y_pred_future_transformed, boxcox_lambda)
-    
+
     # Generate Confidence Intervals (95%)
     ci_margin = 1.96 * np.std(y_pred_future_display)
     lower_bound = y_pred_future_display - ci_margin
     upper_bound = y_pred_future_display + ci_margin
 
     return y_test_display, y_pred_test_display, y_pred_future_display, X_test.index, future_dates, y_pred_test_transformed, lower_bound, upper_bound
+    
 def show_performance_metrics(metrics):
     st.subheader('📊 Performance Metrics of XGBoost')
     # Pass an index to the DataFrame to avoid the error
@@ -160,15 +167,43 @@ specifically for the **Men's Premium Weight Cotton Crew Neck Tee**. The data use
 for this model includes product details, sales history, and other related factors 
 to predict future sales. """)
 
-st.sidebar.header("🔧 Model & Forecast Settings")
-days_to_forecast = st.sidebar.number_input("Days to Forecast", min_value=1, max_value=365, value=30)
+# Streamlit Sidebar Configuration
+forecast_option = st.sidebar.radio(
+    "Choose Forecast Option",
+    ('Number of Days', 'Date Range')
+)
+
 actual_color = st.sidebar.color_picker("Select Actual Sales Color", "#00FF00")
 predicted_color = st.sidebar.color_picker("Select Predicted Sales Color", "#0000FF")
 
-# Run Forecast button
-if st.sidebar.button("Run Forecast"):
+if forecast_option == 'Number of Days':
+    days_to_forecast = st.sidebar.number_input("Days to Forecast", min_value=1, max_value=365, value=30)
+    last_date = y_test.index[-1]
+    future_dates = pd.date_range(start=last_date + timedelta(days=1), periods=days_to_forecast, freq='D')
+elif forecast_option == 'Date Range':
+    min_date = datetime(2023, 1, 1)
+    max_date = datetime.now() + timedelta(days=365)  # Allow forecasting up to a year from today
+    
+    start_date = st.sidebar.date_input("Start Date", 
+                                       min_value=min_date,
+                                       max_value=max_date,
+                                       value=min_date)
+    
+    end_date = st.sidebar.date_input("End Date", 
+                                     min_value=start_date,
+                                     max_value=max_date,
+                                     value=min_date + timedelta(days=30))  # Default to 30 days after start date
+    
+    if start_date <= end_date:
+        future_dates = pd.date_range(start=start_date, end=end_date, freq='D')
+    else:
+        st.sidebar.error("End date must be after start date.")
+        future_dates = pd.DatetimeIndex([])  # Ensure future_dates is always a DatetimeIndex
+
+# Forecasting Execution
+if st.sidebar.button("Run Forecast") and not future_dates.empty:
     y_test_display, y_pred_test_display, y_pred_future_display, test_indices, future_dates, y_pred_test_transformed, lower_bound, upper_bound = train_and_predict(
-        X_train, y_train, X_test, y_test, days_to_forecast, boxcox_lambda)
+        X_train, y_train, X_test, y_test, future_dates, boxcox_lambda)  # Make sure to pass future_dates directly
 
     if y_test_display is not None and y_pred_test_display is not None:
         actual_vs_predicted = generate_forecast_chart(
@@ -179,12 +214,12 @@ if st.sidebar.button("Run Forecast"):
 
         future_forecast_fig = generate_forecast_chart(
             future_dates, [None] * len(future_dates), y_pred_future_display,
-            f"{days_to_forecast} Days Future Sales Forecast", lower_bound=lower_bound, upper_bound=upper_bound,
+            f"{len(future_dates)} Days Future Sales Forecast", lower_bound=lower_bound, upper_bound=upper_bound,
             actual_color=actual_color, predicted_color=predicted_color
         )
         st.plotly_chart(future_forecast_fig)
 
-        # Display forecast table with AgGrid filtering, sorting, and searching
+        # Display forecast table
         forecast_df = pd.DataFrame({
             'Date': future_dates,
             'Forecasted Sales': y_pred_future_display,
@@ -198,6 +233,6 @@ if st.sidebar.button("Run Forecast"):
         csv = forecast_df.to_csv(index=False)
         st.download_button("Download Forecast Data", csv, "forecast_data.csv", "text/csv")
 
-    # Show performance metrics
-    metrics = calculate_errors(y_test.values.flatten(), y_pred_test_transformed)
-    show_performance_metrics(metrics)
+        # Show performance metrics
+        metrics = calculate_errors(y_test.values.flatten(), y_pred_test_transformed)
+        show_performance_metrics(metrics)
