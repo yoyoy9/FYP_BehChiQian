@@ -184,17 +184,19 @@ elif forecast_option == 'Date Range':
     min_date = datetime(2023, 1, 1)
     max_date = datetime.now() + timedelta(days=365)  # Allow forecasting up to a year from today
     
+  # Adjust the default start date to ensure it's within the allowed range
     start_date = st.sidebar.date_input("Start Date", 
                                        min_value=min_date,
                                        max_value=max_date,
                                        value=min_date)
-    
+
     # Ensure that the default value for end_date is within the valid range
     default_end_date = start_date + timedelta(days=30)
     if default_end_date > max_date:
         default_end_date = max_date
-        
-     end_date = st.sidebar.date_input("End Date", 
+
+    # Adjust the End Date input to ensure it's within the allowed range
+    end_date = st.sidebar.date_input("End Date", 
                                      min_value=start_date,
                                      max_value=max_date,
                                      value=default_end_date)
