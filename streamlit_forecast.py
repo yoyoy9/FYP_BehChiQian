@@ -188,6 +188,7 @@ elif forecast_option == 'Date Range':
                                        min_value=min_date,
                                        max_value=max_date,
                                        value=min_date)
+    
     # Ensure that the default value for end_date is within the valid range
     default_end_date = start_date + timedelta(days=30)
     if default_end_date > max_date:
