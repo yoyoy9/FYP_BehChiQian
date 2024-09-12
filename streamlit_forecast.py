@@ -180,18 +180,21 @@ if forecast_option == 'Number of Days':
     days_to_forecast = st.sidebar.number_input("Days to Forecast", min_value=1, max_value=365, value=30)
     last_date = y_test.index[-1]
     future_dates = pd.date_range(start=last_date + timedelta(days=1), periods=days_to_forecast, freq='D')
+
 elif forecast_option == 'Date Range':
-    min_date = datetime(2023, 1, 1)
-    max_date = datetime.now() + timedelta(days=365)  # Allow forecasting up to a year from today
-    
-  # Adjust the default start date to ensure it's within the allowed range
+    # Allow users to select from Jan 1, 2022, to a year from today
+    min_date = datetime(2022, 1, 1).date()  # Ensure this is a date object
+    max_date = (datetime.now() + timedelta(days=365)).date()  # Ensure this is a date object
+
+    # Adjust the default start date to ensure it's within the allowed range
     start_date = st.sidebar.date_input("Start Date", 
                                        min_value=min_date,
                                        max_value=max_date,
                                        value=min_date)
 
     # Ensure that the default value for end_date is within the valid range
-    default_end_date = start_date + timedelta(days=30)
+    default_end_date = (start_date + timedelta(days=30)).date()  # Convert to date object
+
     if default_end_date > max_date:
         default_end_date = max_date
 
@@ -200,6 +203,7 @@ elif forecast_option == 'Date Range':
                                      min_value=start_date,
                                      max_value=max_date,
                                      value=default_end_date)
+
     
     if start_date <= end_date:
         future_dates = pd.date_range(start=start_date, end=end_date, freq='D')
