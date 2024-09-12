@@ -194,7 +194,7 @@ elif forecast_option == 'Date Range':
     if default_end_date > max_date:
         default_end_date = max_date
         
-   end_date = st.sidebar.date_input("End Date", 
+     end_date = st.sidebar.date_input("End Date", 
                                      min_value=start_date,
                                      max_value=max_date,
                                      value=default_end_date)
