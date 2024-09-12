@@ -183,7 +183,7 @@ if forecast_option == 'Number of Days':
 
 elif forecast_option == 'Date Range':
     # Allow users to select from Jan 1, 2022, to a year from today
-    min_date = datetime(2022, 1, 1).date()  # Ensure this is a date object
+    min_date = datetime(2023, 1, 1).date()  # Ensure this is a date object
     max_date = (datetime.now() + timedelta(days=365)).date()  # Ensure this is a date object
 
     # Adjust the default start date to ensure it's within the allowed range
@@ -193,7 +193,7 @@ elif forecast_option == 'Date Range':
                                        value=min_date)
 
     # Ensure that the default value for end_date is within the valid range
-    default_end_date = (start_date + timedelta(days=30)).date()  # Convert to date object
+    default_end_date = start_date + timedelta(days=30)  # No need for .date() since start_date is already a date object
 
     if default_end_date > max_date:
         default_end_date = max_date
