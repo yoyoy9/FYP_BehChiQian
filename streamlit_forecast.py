@@ -188,11 +188,15 @@ elif forecast_option == 'Date Range':
                                        min_value=min_date,
                                        max_value=max_date,
                                        value=min_date)
-    
-    end_date = st.sidebar.date_input("End Date", 
+    # Ensure that the default value for end_date is within the valid range
+    default_end_date = start_date + timedelta(days=30)
+    if default_end_date > max_date:
+        default_end_date = max_date
+        
+   end_date = st.sidebar.date_input("End Date", 
                                      min_value=start_date,
                                      max_value=max_date,
-                                     value=min_date + timedelta(days=30))  # Default to 30 days after start date
+                                     value=default_end_date)
     
     if start_date <= end_date:
         future_dates = pd.date_range(start=start_date, end=end_date, freq='D')
